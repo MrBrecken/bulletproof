@@ -2,308 +2,318 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Siamese Agency Clicker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Siamese Clicker</title>
 
-    <meta property="og:type" content="website">
     <meta property="og:title" content="Siamese Clicker">
     <meta property="og:description" content="CLICK THE IDIOT">
     <meta property="og:image" content="IMG_2109.jpg">
-    <meta name="twitter:card" content="summary_large_image">
 
     <style>
         :root {
-            --primary: #6366f1;
-            --bg: #0f172a;
-            --card: #1e293b;
-            --text: #f8fafc;
+            --ios-blue: #007AFF;
+            --ios-gray: #E9E9EB;
+            --ios-text-black: #000000;
+            --ios-bg: #FFFFFF;
+            --ios-secondary: #8E8E93;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--ios-bg);
+            color: var(--ios-text-black);
             margin: 0;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            overflow-x: hidden;
+            flex-direction: column;
+            height: 100vh;
         }
 
-        #game-container {
-            background-color: var(--card);
-            padding: 2rem;
-            border-radius: 24px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        /* Header / Contact Info */
+        header {
+            padding: 10px;
             text-align: center;
-            width: 90%;
-            max-width: 500px;
-            border: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid #DBDBDB;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 20px;
-            background: rgba(0,0,0,0.2);
-            padding: 15px;
-            border-radius: 12px;
+        .contact-avatar {
+            width: 45px;
+            height: 45px;
+            background: #CCC;
+            border-radius: 50%;
+            margin: 0 auto 5px;
+            overflow: hidden;
         }
 
-        h1 { margin: 0 0 0.5rem 0; font-size: 1.5rem; color: var(--primary); }
-        .stat-label { font-size: 0.8rem; opacity: 0.7; display: block; }
-        .stat-value { font-size: 1.2rem; font-weight: bold; }
+        .contact-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
-        #click-area {
-            position: relative;
-            margin: 30px 0;
+        .contact-name {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        /* Message Thread Area */
+        #chat-thread {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .stat-bubble {
+            align-self: center;
+            font-size: 12px;
+            color: var(--ios-secondary);
+            margin: 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* The "Clicker" Image Bubble */
+        .image-msg {
+            align-self: flex-start;
+            max-width: 75%;
         }
 
         #clicker-image {
-            width: 220px;
-            height: 220px;
-            object-fit: contain;
+            width: 100%;
+            border-radius: 18px;
             cursor: pointer;
-            transition: transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            filter: drop-shadow(0 0 15px rgba(99, 102, 241, 0.3));
+            transition: transform 0.05s ease-out;
+            display: block;
         }
 
-        #clicker-image:hover { transform: scale(1.05); }
-        #clicker-image:active { transform: scale(0.9); }
-
-        .upgrade-container {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-top: 20px;
-            max-height: 300px;
-            overflow-y: auto;
-            padding-right: 5px;
+        #clicker-image:active {
+            transform: scale(0.96);
         }
 
-        button {
-            background: var(--primary);
+        /* Upgrade Bubbles (Look like incoming messages) */
+        .upgrade-bubble {
+            align-self: flex-start;
+            background-color: var(--ios-gray);
+            color: black;
+            padding: 12px 16px;
+            border-radius: 18px;
+            border-bottom-left-radius: 4px;
+            max-width: 80%;
+            font-size: 15px;
+            position: relative;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .upgrade-bubble:active {
+            opacity: 0.7;
+        }
+
+        .upgrade-bubble.locked {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .upgrade-bubble small {
+            display: block;
+            margin-top: 4px;
+            font-size: 12px;
+            color: var(--ios-secondary);
+        }
+
+        /* Rebirth (The "Action" Button) */
+        .action-area {
+            padding: 20px;
+            border-top: 1px solid #DBDBDB;
+            background: #F2F2F7;
+        }
+
+        #rebirth-btn {
+            background-color: var(--ios-blue);
             color: white;
             border: none;
-            padding: 12px;
+            width: 100%;
+            padding: 14px;
             border-radius: 12px;
-            font-weight: bold;
+            font-size: 17px;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
-            font-size: 0.9rem;
         }
 
-        button:hover:not(:disabled) { filter: brightness(1.2); transform: translateY(-2px); }
-        button:disabled { background: #475569; cursor: not-allowed; opacity: 0.5; }
-
-        .rebirth-section {
-            margin-top: 20px;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            padding-top: 20px;
+        #rebirth-btn:disabled {
+            background-color: #D1D1D6;
         }
 
-        #rebirth-btn { background: #ec4899; width: 100%; }
-
-        /* Floating text animation */
-        .click-text {
+        /* Floating +1 Text */
+        .tap-feedback {
             position: absolute;
-            color: #fbbf24;
+            color: var(--ios-blue);
             font-weight: bold;
             pointer-events: none;
-            animation: floatUp 0.8s ease-out forwards;
+            animation: iosFloat 0.6s ease-out forwards;
         }
 
-        @keyframes floatUp {
-            0% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(-100px); opacity: 0; }
+        @keyframes iosFloat {
+            0% { transform: translate(-50%, 0); opacity: 1; }
+            100% { transform: translate(-50%, -60px); opacity: 0; }
         }
-
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
     </style>
 </head>
 <body>
 
-<div id="game-container">
-    <h1>Siamese Agency Clicker</h1>
+<header>
+    <div class="contact-avatar">
+        <img src="IMG_2109-removebg-preview.png" alt="Avatar">
+    </div>
+    <div class="contact-name">Siamese Agency</div>
+    <div style="font-size: 11px; color: var(--ios-blue);">Active Now</div>
+</header>
+
+<div id="chat-thread">
+    <div class="stat-bubble" id="points-display">POINTS: 0</div>
     
-    <div class="stats-grid">
-        <div>
-            <span class="stat-label">POINTS</span>
-            <span class="stat-value" id="points">0</span>
-        </div>
-        <div>
-            <span class="stat-label">REBIRTHS</span>
-            <span class="stat-value" id="rebirths">0</span>
-        </div>
+    <div class="image-msg">
+        <img id="clicker-image" src="IMG_2109-removebg-preview.png" alt="Media File">
     </div>
 
-    <div id="click-area">
-        <img id="clicker-image" src="IMG_2109-removebg-preview.png" alt="The Idiot">
-    </div>
+    <div class="stat-bubble" id="rebirth-display">0 REBIRTHS</div>
 
-    <div id="upgrades-list" class="upgrade-container">
+    <div id="upgrades-container" style="display:flex; flex-direction:column; gap:10px;">
         </div>
+</div>
 
-    <div class="rebirth-section">
-        <button id="rebirth-btn">Rebirth (Cost: 1M)</button>
-        <p style="font-size: 0.7rem; margin-top: 8px; opacity: 0.6;">Each rebirth adds a permanent 2x multiplier.</p>
-    </div>
-    
-    <button onclick="resetGame()" style="background:transparent; color: #ef4444; font-size: 0.6rem; margin-top: 20px;">Hard Reset Data</button>
+<div class="action-area">
+    <button id="rebirth-btn">Rebirth (Cost: 1M)</button>
+    <p style="text-align:center; font-size: 11px; color: var(--ios-secondary); margin-top: 10px;">
+        Tap the image to generate points.
+    </p>
 </div>
 
 <script>
-    // --- Initial State ---
     let game = {
         points: 0n,
-        totalPointsEver: 0n,
         rebirths: 0n,
         clickPower: 1n,
         upgradeLevel: 0
     };
 
-    // --- AI Name Generator for "Infinite" feel ---
-    const prefixes = ["Synergy", "Hyper", "Quantum", "Siamese", "Agency", "Turbo", "Global", "Elite", "Neural"];
-    const suffixes = ["Optimization", "Acquisition", "Cloud", "Matrix", "Engine", "protocol", "Growth", "Logic"];
+    const prefixes = ["Optimization", "Neural", "Agency", "Liquid", "Siamese", "Cloud", "Quantum"];
+    const suffixes = ["Patch", "Protocol", "Sync", "Update", "Link"];
 
-    function generateUpgradeName() {
-        const p = prefixes[Math.floor(Math.random() * prefixes.length)];
-        const s = suffixes[Math.floor(Math.random() * suffixes.length)];
-        return `${p} ${s}`;
-    }
-
-    // --- Formatting for Infinity ---
-    const suffixes_short = ["", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc"];
     function format(n) {
         if (n < 1000n) return n.toString();
+        const units = ["", "K", "M", "B", "T", "Qa", "Qi"];
         let s = n.toString();
         let unitIdx = Math.floor((s.length - 1) / 3);
-        if (unitIdx >= suffixes_short.length) return s[0] + "." + s.substring(1,3) + "e" + (s.length - 1);
-        
+        if (unitIdx >= units.length) return s[0] + "." + s.substring(1,3) + "e" + (s.length - 1);
         let digits = s.length % 3 || 3;
-        let main = s.substring(0, digits);
-        let dec = s.substring(digits, digits + 2);
-        return main + "." + dec + suffixes_short[unitIdx];
+        return s.substring(0, digits) + "." + s.substring(digits, digits + 2) + units[unitIdx];
     }
 
-    // --- Core Logic ---
-    function getClickValue() {
-        let mult = 2n ** game.rebirths;
-        return game.clickPower * mult;
-    }
-
-    function createUpgrade() {
-        const list = document.getElementById('upgrades-list');
-        list.innerHTML = ""; // Keep only the latest relevant upgrade to prevent lag
-
-        const cost = 10n ** (BigInt(game.upgradeLevel) + 1n) * 5n;
-        const btn = document.createElement('button');
-        btn.id = "main-upgrade";
-        btn.innerHTML = `Buy ${generateUpgradeName()}<br><small>Cost: ${format(cost)} | +${format(cost/5n)} Click Power</small>`;
+    function render() {
+        document.getElementById('points-display').innerText = `POINTS: ${format(game.points)}`;
+        document.getElementById('rebirth-display').innerText = `${game.rebirths} REBIRTHS`;
         
-        btn.onclick = () => {
+        const rCost = 1000000n * (50n ** game.rebirths);
+        const rBtn = document.getElementById('rebirth-btn');
+        rBtn.innerText = `Rebirth (Cost: ${format(rCost)})`;
+        rBtn.disabled = game.points < rCost;
+
+        updateUpgradeUI();
+    }
+
+    function updateUpgradeUI() {
+        const container = document.getElementById('upgrades-container');
+        container.innerHTML = "";
+        
+        const cost = 10n ** (BigInt(game.upgradeLevel) + 1n) * 3n;
+        const bubble = document.createElement('div');
+        bubble.className = `upgrade-bubble ${game.points < cost ? 'locked' : ''}`;
+        
+        const name = prefixes[game.upgradeLevel % prefixes.length] + " " + suffixes[game.upgradeLevel % suffixes.length];
+        
+        bubble.innerHTML = `
+            <b>${name}</b>
+            <small>Tap to buy • Cost: ${format(cost)}</small>
+        `;
+
+        bubble.onclick = () => {
             if (game.points >= cost) {
                 game.points -= cost;
-                game.clickPower += (cost / 5n);
+                game.clickPower += (cost / 4n);
                 game.upgradeLevel++;
                 saveGame();
                 render();
             }
         };
-        list.appendChild(btn);
+        container.appendChild(bubble);
     }
 
-    // --- Rebirth ---
-    function getRebirthCost() {
-        return 1000000n * (100n ** game.rebirths);
-    }
-
-    document.getElementById('rebirth-btn').onclick = () => {
-        let cost = getRebirthCost();
-        if (game.points >= cost) {
-            if (confirm("Rebirth? You will lose points and upgrades, but gain a permanent 2x multiplier!")) {
-                game.points = 0n;
-                game.clickPower = 1n;
-                game.upgradeLevel = 0;
-                game.rebirths++;
-                saveGame();
-                render();
-            }
-        }
-    };
-
-    // --- Visuals ---
     document.getElementById('clicker-image').onclick = (e) => {
-        const val = getClickValue();
+        const val = game.clickPower * (2n ** game.rebirths);
         game.points += val;
-        game.totalPointsEver += val;
 
-        // Floating Text
-        const text = document.createElement('div');
-        text.className = 'click-text';
-        text.innerText = `+${format(val)}`;
-        text.style.left = `${e.pageX}px`;
-        text.style.top = `${e.pageY}px`;
-        document.body.appendChild(text);
-        setTimeout(() => text.remove(), 800);
+        const fb = document.createElement('div');
+        fb.className = 'tap-feedback';
+        fb.innerText = `+${format(val)}`;
+        fb.style.left = `${e.pageX}px`;
+        fb.style.top = `${e.pageY}px`;
+        document.body.appendChild(fb);
+        setTimeout(() => fb.remove(), 600);
 
         render();
     };
 
-    function render() {
-        document.getElementById('points').innerText = format(game.points);
-        document.getElementById('rebirths').innerText = game.rebirths.toString();
-        
-        const upBtn = document.getElementById('main-upgrade');
-        const rCost = getRebirthCost();
-        const rBtn = document.getElementById('rebirth-btn');
+    document.getElementById('rebirth-btn').onclick = () => {
+        const cost = 1000000n * (50n ** game.rebirths);
+        if (game.points >= cost) {
+            game.points = 0n;
+            game.clickPower = 1n;
+            game.upgradeLevel = 0;
+            game.rebirths++;
+            saveGame();
+            render();
+        }
+    };
 
-        rBtn.innerText = `Rebirth (Cost: ${format(rCost)})`;
-        rBtn.disabled = game.points < rCost;
-
-        createUpgrade(); // Generate new upgrade based on level
-    }
-
-    // --- Save/Load System ---
     function saveGame() {
-        const saveData = {
-            points: game.points.toString(),
-            total: game.totalPointsEver.toString(),
-            rebirths: game.rebirths.toString(),
-            power: game.clickPower.toString(),
-            lv: game.upgradeLevel
+        const d = { 
+            p: game.points.toString(), 
+            r: game.rebirths.toString(), 
+            cp: game.clickPower.toString(), 
+            lv: game.upgradeLevel 
         };
-        localStorage.setItem('siameseClickerSave', JSON.stringify(saveData));
+        localStorage.setItem('siamese_ios_save', JSON.stringify(d));
     }
 
     function loadGame() {
-        const saved = localStorage.getItem('siameseClickerSave');
-        if (saved) {
-            const d = JSON.parse(saved);
-            game.points = BigInt(d.points);
-            game.totalPointsEver = BigInt(d.total);
-            game.rebirths = BigInt(d.rebirths);
-            game.clickPower = BigInt(d.power);
+        const s = localStorage.getItem('siamese_ios_save');
+        if (s) {
+            const d = JSON.parse(s);
+            game.points = BigInt(d.p);
+            game.rebirths = BigInt(d.r);
+            game.clickPower = BigInt(d.cp);
             game.upgradeLevel = d.lv;
         }
         render();
     }
 
-    function resetGame() {
-        if (confirm("Delete all progress?")) {
-            localStorage.removeItem('siameseClickerSave');
-            location.reload();
-        }
-    }
-
-    // Autosave every 30 seconds
-    setInterval(saveGame, 30000);
-
-    // Initial Load
     window.onload = loadGame;
+    setInterval(saveGame, 10000);
 </script>
 
 </body>
