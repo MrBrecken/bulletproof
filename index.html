@@ -13,6 +13,7 @@
             --text: #1a1a1a;
             --secondary: rgba(243, 244, 246, 0.9);
             --border: #e5e7eb;
+            --accent: #007AFF;
         }
 
         * { box-sizing: border-box; user-select: none; -webkit-user-drag: none; }
@@ -81,7 +82,8 @@
 
         .upgrade-icon { width: 64px; height: 64px; border-radius: 12px; object-fit: cover; background: #eee; border: 1px solid #ddd; }
         .u-name { font-weight: 900; font-size: 1.1rem; display: block; }
-        .u-cost { font-weight: 700; font-size: 0.9rem; color: #007AFF; }
+        .u-desc { font-size: 0.75rem; color: #666; font-weight: 600; }
+        .u-cost { font-weight: 800; font-size: 0.95rem; color: var(--accent); }
 
         .particle {
             position: absolute; font-weight: 900; pointer-events: none; color: #000;
@@ -113,7 +115,9 @@
     <div style="text-align: center;">
         <div style="font-weight: 900; letter-spacing: 4px; font-size: 0.8rem; color: #999;">SIAMESE AGENCY</div>
         <h1 id="points">0</h1>
-        <div style="font-weight: 700; color: #555; margin-top: 5px;" id="power-display">+1 per click</div>
+        <div id="stats-bar" style="font-weight: 700; color: #444; margin-top: 10px; font-size: 0.9rem;">
+            <span id="power-display">+1/click</span> • <span id="pps-display">0/sec</span>
+        </div>
     </div>
 
     <div id="clicker-container">
@@ -139,13 +143,13 @@
     let game = {
         points: 0n,
         clickPower: 1n,
+        pointsPerSec: 0n,
         rebirths: 0n,
         agencyIdx: 0,
         jarvisIdx: 0,
         page: 0
     };
 
-    // ALL images sent so far integrated here
     const agencyUpgrades = [
         { name: "Rhythia Sync", img: "rhythia-steam.png" },
         { name: "Mugshot Protocol", img: "OIP.webp" },
@@ -191,48 +195,50 @@
 
     function render() {
         document.getElementById('points').innerText = format(game.points);
-        document.getElementById('power-display').innerText = `+${format(game.clickPower * (2n ** game.rebirths))} per click`;
+        const multi = 2n ** game.rebirths;
+        document.getElementById('power-display').innerText = `+${format(game.clickPower * multi)}/click`;
+        document.getElementById('pps-display').innerText = `${format(game.pointsPerSec * multi)}/sec`;
         
         const list = document.getElementById('upgrades-list');
         list.innerHTML = "";
 
         if (game.page === 0) {
             const up = agencyUpgrades[game.agencyIdx % agencyUpgrades.length];
-            // CHEAPER SCALING: Starts lower (150) and grows at a slower 4x rate per level
-            const cost = 150n * (4n ** BigInt(game.agencyIdx));
-            createCard(up.name, up.img, cost, () => {
+            // Reverted scaling: First upgrade is 50, then 8x cost scaling
+            const cost = 50n * (8n ** BigInt(game.agencyIdx));
+            createCard(up.name, "Click Power", up.img, cost, () => {
                 game.points -= cost;
-                // BETTER POWER: Adds 25% of current cost to power instead of 10%
-                game.clickPower += (cost / 4n);
+                game.clickPower += (cost / 10n) + 2n;
                 spawnFloating(up.img);
                 game.agencyIdx++;
                 render();
             });
         } else {
-            // JARVIS BOTS: Slower scaling for infinite play
-            const cost = 1000n * (3n ** BigInt(game.jarvisIdx));
-            createCard(`Jarvis Unit ${game.jarvisIdx + 1}`, "", cost, () => {
+            // Jarvis Bots Reverted: First cost 500, then 10x scaling
+            const cost = 500n * (10n ** BigInt(game.jarvisIdx));
+            createCard(`Jarvis Unit ${game.jarvisIdx + 1}`, "Auto-Points", "", cost, () => {
                 game.points -= cost;
-                game.clickPower += (cost / 3n);
+                game.pointsPerSec += (cost / 8n) + 10n;
                 game.jarvisIdx++;
                 render();
             });
         }
         
-        const rCost = 500000n * (20n ** game.rebirths); // Rebirth also made cheaper
+        const rCost = 1000000n * (100n ** game.rebirths); // Reverted Rebirth
         document.getElementById('rebirth-btn').innerText = `REBIRTH (${format(rCost)})`;
         document.getElementById('rebirth-btn').disabled = game.points < rCost;
     }
 
-    function createCard(name, img, cost, onClick) {
+    function createCard(name, desc, img, cost, onClick) {
         const card = document.createElement('div');
         card.className = `upgrade-card ${game.points < cost ? 'locked' : ''}`;
         card.innerHTML = `
             <img src="${img}" class="upgrade-icon">
-            <div class="upgrade-info">
+            <div style="flex:1">
                 <span class="u-name">${name}</span>
-                <span class="u-cost">Cost: ${format(cost)}</span>
+                <span class="u-desc">${desc}</span>
             </div>
+            <div class="u-cost">${format(cost)}</div>
         `;
         if (game.points >= cost) card.onclick = onClick;
         document.getElementById('upgrades-list').appendChild(card);
@@ -250,10 +256,17 @@
         render();
     };
 
+    // Passive Income Logic
+    setInterval(() => {
+        const income = game.pointsPerSec * (2n ** game.rebirths);
+        game.points += income;
+        document.getElementById('points').innerText = format(game.points);
+    }, 1000);
+
     function rebirth() {
-        const cost = 500000n * (20n ** game.rebirths);
+        const cost = 1000000n * (100n ** game.rebirths);
         if (game.points >= cost) {
-            game.points = 0n; game.clickPower = 1n;
+            game.points = 0n; game.clickPower = 1n; game.pointsPerSec = 0n;
             game.agencyIdx = 0; game.jarvisIdx = 0;
             game.rebirths++;
             document.getElementById('effect-layer').innerHTML = "";
