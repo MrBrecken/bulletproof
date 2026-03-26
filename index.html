@@ -11,7 +11,7 @@
         
         body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; }
 
-        /* --- STICKY HIGH-VISIBILITY SWIRLS --- */
+        /* --- VISIBLE SWIRLS --- */
         #bg-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: #fff; }
 
         #game-view { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
@@ -20,10 +20,7 @@
         #points { font-size: 6rem; font-weight: 900; margin: 0; letter-spacing: -5px; line-height: 0.85; }
         #stats { font-weight: 800; color: #444; margin-top: 15px; font-size: 1.1rem; }
 
-        /* Top Left Minigames Button */
         #minigames-trigger { position: fixed; top: 30px; left: 30px; background: #000; color: #fff; border: none; padding: 18px 28px; border-radius: 16px; cursor: pointer; font-weight: 900; font-size: 0.8rem; letter-spacing: 1.5px; z-index: 100; }
-
-        /* Gems Counter */
         #gem-display { position: fixed; top: 30px; left: 200px; font-weight: 900; font-size: 1.2rem; color: #000; z-index: 100; }
 
         .nav-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px; }
@@ -39,13 +36,12 @@
         .u-name { font-weight: 900; font-size: 1.2rem; display: block; text-transform: uppercase; }
         .u-cost { font-weight: 700; font-size: 0.95rem; color: #555; }
 
-        /* Settings and Minigame Overlays */
         #settings-trigger { position: fixed; bottom: 30px; left: 30px; background: #000; color: #fff; border: none; padding: 18px 28px; border-radius: 16px; cursor: pointer; font-weight: 900; font-size: 0.8rem; letter-spacing: 1.5px; z-index: 100; }
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(15px); z-index: 1000; display: none; align-items: center; justify-content: center; }
         .popup-box { background: #fff; padding: 40px; border-radius: 30px; width: 400px; text-align: center; }
 
-        #flappy-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #4ec0ca; z-index: 2000; display: none; flex-direction: column; align-items: center; }
-        #flappy-canvas { background: #4ec0ca; display: block; }
+        #flappy-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #4ec0ca; z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; }
+        #flappy-canvas { background: #fff; display: block; border: 5px solid #000; border-radius: 20px; }
 
         #rebirth-btn { width: 100%; padding: 25px; background: #000; color: #fff; border: none; font-weight: 900; border-radius: 20px; font-size: 1.3rem; cursor: pointer; }
         #rebirth-btn:disabled { background: #eee; color: #aaa; }
@@ -101,18 +97,16 @@
 </div>
 
 <div id="flappy-container">
-    <div style="position: absolute; top: 20px; color: white; font-weight: 900; font-size: 2rem;">Score: <span id="f-score">0</span></div>
+    <div style="color: black; font-weight: 900; font-size: 2rem; margin-bottom: 10px;">Score: <span id="f-score">0</span></div>
     <canvas id="flappy-canvas"></canvas>
-    <button onclick="endFlappy()" style="position: absolute; bottom: 40px; padding: 15px 30px; background: #000; color: #fff; border: none; border-radius: 10px; font-weight: 900; cursor: pointer;">QUIT GAME</button>
+    <button onclick="endFlappy()" style="margin-top: 20px; padding: 15px 30px; background: #000; color: #fff; border: none; border-radius: 10px; font-weight: 900; cursor: pointer;">QUIT GAME</button>
 </div>
 
 <script>
-    // --- PERSISTENT GAME DATA (DO NOT CHANGE) ---
     let game = { points: 0n, clickPower: 1n, pps: 0n, rebirths: 0n, agencyIdx: 0, jarvisIdx: 0, page: 0, muted: false, gems: 0 };
     const agencyImgs = ["rhythia-steam.png", "OIP.webp", "OIP (1).webp", "Annotation 2025-12-18 203140.png", "baldi.png-removebg-preview.png", "blossom.gif", "bradarwhatisthis.gif", "togif.gif", "whoisalter.png", "IMG_1114.jpg"];
     const suffixes = ["", "k", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc", "Ud", "Dd", "Td", "Qad", "Qid", "Sxd", "Spd", "Ocd", "Nod", "Vg"];
 
-    // --- REVERTED RENDER LOGIC ---
     function format(n) {
         if (n < 1000n) return n.toString();
         let s = n.toString();
@@ -168,71 +162,86 @@
     function toggleMute() { game.muted = !game.muted; document.getElementById('mute-btn').innerText = game.muted ? "AUDIO: OFF" : "AUDIO: ON"; }
     function rebirth() { if(game.points >= 10n**100n) { game.points=0n; game.clickPower=1n; game.pps=0n; game.agencyIdx=0; game.jarvisIdx=0; game.rebirths++; render(); } }
 
-    // --- VISIBLE SWIRLS (FIXED) ---
-    const canvas = document.getElementById('bg-canvas');
-    const ctx = canvas.getContext('2d');
-    let width, height, blobs = [];
+    const bgCanvas = document.getElementById('bg-canvas');
+    const bgCtx = bgCanvas.getContext('2d');
+    let bgBlobs = [];
     function initBg() {
-        width = canvas.width = window.innerWidth;
-        height = canvas.height = window.innerHeight;
-        blobs = Array.from({length: 6}, () => ({ x: Math.random()*width, y: Math.random()*height, vx: Math.random()*2-1, vy: Math.random()*2-1, r: Math.random()*300+200 }));
+        bgCanvas.width = window.innerWidth; bgCanvas.height = window.innerHeight;
+        bgBlobs = Array.from({length: 8}, () => ({ x: Math.random()*bgCanvas.width, y: Math.random()*bgCanvas.height, vx: Math.random()*2-1, vy: Math.random()*2-1, r: Math.random()*300+200 }));
     }
     function drawBg() {
-        ctx.fillStyle = '#fff'; ctx.fillRect(0,0,width,height);
-        ctx.filter = 'blur(100px) contrast(50)';
-        blobs.forEach(b => {
-            ctx.fillStyle = '#bbb'; ctx.beginPath(); ctx.arc(b.x, b.y, b.r, 0, Math.PI*2); ctx.fill();
+        bgCtx.fillStyle = '#fff'; bgCtx.fillRect(0,0,bgCanvas.width,bgCanvas.height);
+        bgCtx.filter = 'blur(80px) contrast(30)';
+        bgBlobs.forEach(b => {
+            bgCtx.fillStyle = '#aaa'; bgCtx.beginPath(); bgCtx.arc(b.x, b.y, b.r, 0, Math.PI*2); bgCtx.fill();
             b.x += b.vx; b.y += b.vy;
-            if(b.x < -b.r || b.x > width+b.r) b.vx *= -1;
-            if(b.y < -b.r || b.y > height+b.r) b.vy *= -1;
+            if(b.x < -b.r || b.x > bgCanvas.width+b.r) b.vx *= -1;
+            if(b.y < -b.r || b.y > bgCanvas.height+b.r) b.vy *= -1;
         });
-        ctx.filter = 'none'; requestAnimationFrame(drawBg);
+        bgCtx.filter = 'none'; requestAnimationFrame(drawBg);
     }
     window.addEventListener('resize', initBg); initBg(); drawBg();
 
-    // --- FLAPPY SIAMESE LOGIC ---
+    // --- FLAPPY SIAMESE FIXED ---
     const fc = document.getElementById('flappy-canvas');
     const fctx = fc.getContext('2d');
-    let fScore = 0, birdY = 250, birdV = 0, pipes = [], fActive = false;
+    let fScore = 0, birdY = 250, birdV = 0, pipes = [], fActive = false, fAnim;
     const bImg = new Image(); bImg.src = 'IMG_3017.jpg';
     const pImg = new Image(); pImg.src = 'image0_15.gif';
 
     function startFlappy() { 
         toggleOverlay('minigame-menu'); 
         document.getElementById('flappy-container').style.display = 'flex';
-        fc.width = 400; fc.height = 600;
+        fc.width = 400; fc.height = 500;
         fScore = 0; birdY = 250; birdV = 0; pipes = []; fActive = true;
+        document.getElementById('f-score').innerText = "0";
         flappyLoop();
     }
-    function endFlappy() { fActive = false; document.getElementById('flappy-container').style.display = 'none'; render(); }
+    function endFlappy() { 
+        fActive = false; 
+        cancelAnimationFrame(fAnim);
+        document.getElementById('flappy-container').style.display = 'none'; 
+        render(); 
+    }
 
-    window.onkeydown = (e) => { if(e.code === 'Space' && fActive) birdV = -8; };
-    fc.onmousedown = () => { if(fActive) birdV = -8; };
+    window.addEventListener('keydown', (e) => { if(e.code === 'Space' && fActive) birdV = -7; });
+    fc.onmousedown = () => { if(fActive) birdV = -7; };
 
     function flappyLoop() {
         if(!fActive) return;
-        fctx.fillStyle = '#4ec0ca'; fctx.fillRect(0,0,400,600);
-        birdV += 0.5; birdY += birdV;
+        fctx.fillStyle = '#4ec0ca'; fctx.fillRect(0,0,400,500);
+        
+        birdV += 0.4; birdY += birdV;
         fctx.drawImage(bImg, 50, birdY, 40, 40);
-        if(Date.now() % 100 < 20 && (pipes.length === 0 || pipes[pipes.length-1].x < 200)) {
-            pipes.push({ x: 400, h: Math.random()*300+100 });
+
+        if(pipes.length === 0 || pipes[pipes.length-1].x < 220) {
+            pipes.push({ x: 400, h: Math.random()*200+50, scored: false });
         }
+
         pipes.forEach((p, i) => {
             p.x -= 3;
-            fctx.drawImage(pImg, p.x, 0, 50, p.h);
-            fctx.drawImage(pImg, p.x, p.h + 150, 50, 600);
-            if(p.x === 50) { 
-                fScore++; 
+            // Draw Pipes
+            fctx.drawImage(pImg, p.x, 0, 60, p.h); // Top
+            fctx.drawImage(pImg, p.x, p.h + 140, 60, 500); // Bottom
+            
+            // Score tracking
+            if(!p.scored && p.x < 50) { 
+                p.scored = true; fScore++; 
                 document.getElementById('f-score').innerText = fScore;
                 if(fScore % 10 === 0) game.gems++;
             }
-            if(p.x < 50 && p.x > 10 && (birdY < p.h || birdY > p.h+110)) endFlappy();
-            if(p.x < -50) pipes.splice(i, 1);
-        });
-        if(birdY > 600 || birdY < 0) endFlappy();
-        requestAnimationFrame(flappyLoop);
-    }
 
+            // Collision
+            if(p.x < 90 && p.x + 60 > 50) {
+                if(birdY < p.h || birdY + 40 > p.h + 140) endFlappy();
+            }
+
+            if(p.x < -60) pipes.splice(i, 1);
+        });
+
+        if(birdY > 500 || birdY < -50) endFlappy();
+        fAnim = requestAnimationFrame(flappyLoop);
+    }
     render();
 </script>
 </body>
