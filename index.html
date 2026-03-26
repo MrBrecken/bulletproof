@@ -17,7 +17,6 @@
         
         body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text); margin: 0; display: flex; height: 100vh; overflow: hidden; }
 
-        /* --- VISIBLE SWIRLS (UNCHANGED) --- */
         #bg-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: #fff; pointer-events: none; }
 
         #game-view { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; z-index: 1; }
@@ -53,6 +52,8 @@
         #rebirth-btn:disabled { background: #eee; color: #aaa; }
         .particle { position: absolute; font-weight: 900; pointer-events: none; color: #000; animation: pOut 0.8s forwards; font-size: 2.2rem; z-index: 99; }
         @keyframes pOut { 0% { transform: translate(-50%,-50%); opacity: 1; } 100% { transform: translate(-50%,-200px); opacity: 0; } }
+        
+        .io-btn { margin-top: 10px; width: 100%; padding: 12px; background: #f0f0f0; border: none; border-radius: 10px; font-weight: 900; cursor: pointer; font-size: 0.7rem; }
     </style>
 </head>
 <body>
@@ -93,7 +94,9 @@
 <div id="settings-overlay" class="overlay" onclick="if(event.target.id==='settings-overlay') toggleOverlay('settings-overlay')">
     <div class="popup-box">
         <h2 style="font-weight: 900; font-size: 2.5rem;">OPTIONS</h2>
-        <button onclick="toggleMute()" id="mute-btn" style="width:100%; padding:20px; background:#000; color:#fff; border-radius:15px; font-weight:900;">AUDIO: ON</button>
+        <button onclick="toggleMute()" id="mute-btn" style="width:100%; padding:20px; background:#000; color:#fff; border-radius:15px; font-weight:900; margin-bottom:10px;">AUDIO: ON</button>
+        <button onclick="exportData()" class="io-btn">EXPORT BRAILLE DATA</button>
+        <button onclick="importData()" class="io-btn">IMPORT BRAILLE DATA</button>
         <div style="margin-top: 30px; font-weight: 900; color: #aaa; cursor: pointer;" onclick="toggleOverlay('settings-overlay')">CLOSE</div>
     </div>
 </div>
@@ -115,24 +118,51 @@
 <script>
     let game = { points: 0n, clickPower: 1n, pps: 0n, rebirths: 0n, agencyIdx: 0, jarvisIdx: 0, page: 0, muted: false, gems: 0, musicStarted: false };
     
-    // --- NEW: Dynamic Name Generators (Randomly Generated Names) ---
+    // --- Braille Conversion Logic ---
+    const brailleMap = {"0":"⠚","1":"⠁","2":"⠝","3":"⠉","4":"⠙","5":"⠑","6":"⠋","7":"⠛","8":"⠓","9":"⠊","a":"⠁","b":"⠃","c":"⠉","d":"⠙","e":"⠑","f":"⠋","g":"⠛","h":"⠓","i":"⠊","j":"⠚","k":"⠅","l":"⠇","m":"⠍","n":"⠝","o":"⠕","p":"⠏","q":"⠟","r":"⠗","s":"⠎","t":"⠞","u":"⠥","v":"⠧","w":"⠺","x":"⠭","y":"⠽","z":"⠵","{":"⠪","}":"⠻","\"":"⠐",":":"⠒",",":"⠂","n":"⠝"};
+    const revBrailleMap = Object.fromEntries(Object.entries(brailleMap).map(([k, v]) => [v, k]));
+
+    function toBraille(str) { return str.toLowerCase().split('').map(c => brailleMap[c] || c).join(''); }
+    function fromBraille(str) { return str.split('').map(c => revBrailleMap[c] || c).join(''); }
+
+    function exportData() {
+        const data = JSON.stringify(game, (key, value) => typeof value === 'bigint' ? value.toString() + 'n' : value);
+        const bCode = toBraille(data);
+        navigator.clipboard.writeText(bCode);
+        alert("Braille Save Code Copied to Clipboard!");
+    }
+
+    function importData() {
+        const bCode = prompt("Paste your Braille code:");
+        if (!bCode) return;
+        try {
+            const raw = fromBraille(bCode);
+            const parsed = JSON.parse(raw, (key, value) => (typeof value === 'string' && value.endsWith('n')) ? BigInt(value.slice(0, -1)) : value);
+            game = parsed;
+            render();
+        } catch(e) { alert("Invalid Braille Data!"); }
+    }
+
+    // --- Fixed Upgrade Names: Generated once and stored ---
+    let lockedNames = [];
     const agencyKeywords1 = ["MrBrecken", "Mole East", "pussy ass", "Dahmer", "Jeffrey", "baldi", "blossom"];
     const agencyKeywords2 = ["Link", "Clicker", "Commit", "Update", "Annotation", "Upload", "CNAME"];
     const agencyKeywords3 = ["East", "Siamese", "Agency", "Gamer Girl", "rhythia", "togif"];
 
-    function generateAgencyName(index) {
-        const k1 = agencyKeywords1[Math.floor(Math.random() * agencyKeywords1.length)];
-        const k2 = agencyKeywords2[Math.floor(Math.random() * agencyKeywords2.length)];
-        const k3 = agencyKeywords3[Math.floor(Math.random() * agencyKeywords3.length)];
-        return `Agency ${k1} ${k2} ${k3} #${index + 1}`;
+    function getLockedName(index) {
+        while (lockedNames.length <= index) {
+            const k1 = agencyKeywords1[Math.floor(Math.random() * agencyKeywords1.length)];
+            const k2 = agencyKeywords2[Math.floor(Math.random() * agencyKeywords2.length)];
+            const k3 = agencyKeywords3[Math.floor(Math.random() * agencyKeywords3.length)];
+            lockedNames.push(`Agency ${k1} ${k2} ${k3} #${lockedNames.length + 1}`);
+        }
+        return lockedNames[index];
     }
 
-    // --- UPDATED IMAGE LIST FROM THE GITHUB SCREENSHOT (25 NEW IMAGES/GIFS) ---
+    // --- Filtered Images: Removing duplicates used elsewhere ---
     const agencyImgs = [
         "Annotation 2025-12-18 203140.png",
         "IMG_1114.png",
-        "IMG_2109-removebg-preview.png",
-        "IMG_2109.jpg",
         "IMG_3018.png",
         "OIP (1).webp",
         "OIP.webp",
@@ -143,11 +173,9 @@
         "bradarwhatisthis.gif",
         "dahmer-jeffrey.gif",
         "image.png",
-        "image0_15.gif",
         "rhythia-steam.png",
         "rrxc12ej6dqtf7a18m4dy3vdk9vm.jpg",
         "togif-1.gif",
-        "togif.gif",
         "whoisalter.png"
     ];
 
@@ -175,11 +203,9 @@
         
         if (game.page === 0) {
             const cost = 50n * (12n ** BigInt(game.agencyIdx));
-            // FIXED NAMES: Randomly generated name
-            createCard(generateAgencyName(game.agencyIdx), agencyImgs[game.agencyIdx % agencyImgs.length], cost, () => { game.points -= cost; game.clickPower += (cost / 10n) + 3n; game.agencyIdx++; render(); });
+            createCard(getLockedName(game.agencyIdx), agencyImgs[game.agencyIdx % agencyImgs.length], cost, () => { game.points -= cost; game.clickPower += (cost / 10n) + 3n; game.agencyIdx++; render(); });
         } else {
             const cost = 1000n * (15n ** BigInt(game.jarvisIdx));
-            // Fixed Image: Jarvis Bot always defaults to 'togif.gif' as previously requested.
             createCard(`Jarvis Bot Mk ${game.jarvisIdx + 1}`, "togif.gif", cost, () => { game.points -= cost; game.pps += (cost / 8n) + 10n; game.jarvisIdx++; render(); });
         }
 
@@ -201,7 +227,6 @@
             document.getElementById('main-music').play();
             game.musicStarted = true;
         }
-
         const val = game.clickPower * (2n ** game.rebirths);
         game.points += val;
         const p = document.createElement('div');
@@ -224,7 +249,6 @@
 
     function rebirth() { if(game.points >= 10n**100n) { game.points=0n; game.clickPower=1n; game.pps=0n; game.agencyIdx=0; game.jarvisIdx=0; game.rebirths++; render(); } }
 
-    // --- VISIBLE SWIRLS (UNCHANGED) ---
     const bgCanvas = document.getElementById('bg-canvas');
     const bgCtx = bgCanvas.getContext('2d');
     let bgBlobs = [];
@@ -255,12 +279,11 @@
     }
     window.addEventListener('resize', initBg); initBg(); drawBg();
 
-    // --- FLAPPY SIAMESE PHYSICS (UNCHANGED) ---
     const fc = document.getElementById('flappy-canvas');
     const fctx = fc.getContext('2d');
     let fScore = 0, birdY = 250, birdV = 0, pipes = [], fActive = false, fAnim;
     const bImg = new Image(); bImg.src = 'IMG_3017.jpg';
-    const pImg = new Image(); pImg.src = 'image0_15.gif'; // This is only used for the pipes
+    const pImg = new Image(); pImg.src = 'image0_15.gif';
 
     function startFlappy() { 
         toggleOverlay('minigame-menu'); 
@@ -270,48 +293,25 @@
         document.getElementById('f-score').innerText = "0";
         flappyLoop();
     }
-    function endFlappy() { 
-        fActive = false; 
-        cancelAnimationFrame(fAnim);
-        document.getElementById('flappy-container').style.display = 'none'; 
-        render(); 
-    }
+    function endFlappy() { fActive = false; cancelAnimationFrame(fAnim); document.getElementById('flappy-container').style.display = 'none'; render(); }
 
-    // Weakened jump power for better control
     window.addEventListener('keydown', (e) => { if(e.code === 'Space' && fActive) { birdV = -4.5; e.preventDefault(); } });
     fc.onmousedown = (e) => { if(fActive) { birdV = -4.5; e.preventDefault(); } };
 
     function flappyLoop() {
         if(!fActive) return;
         fctx.fillStyle = '#4ec0ca'; fctx.fillRect(0,0,400,500);
-        
-        birdV += 0.2; // Halved gravity
-        birdY += birdV;
+        birdV += 0.2; birdY += birdV;
         fctx.drawImage(bImg, 50, birdY, 40, 40);
-
-        if(pipes.length === 0 || pipes[pipes.length-1].x < 180) {
-            pipes.push({ x: 400, h: Math.random()*200+50, scored: false });
-        }
-
+        if(pipes.length === 0 || pipes[pipes.length-1].x < 180) pipes.push({ x: 400, h: Math.random()*200+50, scored: false });
         pipes.forEach((p, i) => {
-            p.x -= 1.5; // Halved pipe speed
-            
+            p.x -= 1.5;
             fctx.drawImage(pImg, p.x, 0, 60, p.h); 
             fctx.drawImage(pImg, p.x, p.h + 140, 60, 500); 
-            
-            if(!p.scored && p.x < 50) { 
-                p.scored = true; fScore++; 
-                document.getElementById('f-score').innerText = fScore;
-                if(fScore % 10 === 0) game.gems += 1;
-            }
-
-            if(p.x < 90 && p.x + 60 > 50) {
-                if(birdY + 5 < p.h || birdY + 35 > p.h + 140) endFlappy();
-            }
-
+            if(!p.scored && p.x < 50) { p.scored = true; fScore++; document.getElementById('f-score').innerText = fScore; if(fScore % 10 === 0) game.gems += 1; }
+            if(p.x < 90 && p.x + 60 > 50) { if(birdY + 5 < p.h || birdY + 35 > p.h + 140) endFlappy(); }
             if(p.x < -60) pipes.splice(i, 1);
         });
-
         if(birdY > 500 || birdY < -40) endFlappy();
         fAnim = requestAnimationFrame(flappyLoop);
     }
