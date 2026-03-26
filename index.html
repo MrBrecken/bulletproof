@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Siamese Agency Clicker</title>
+    
+    <meta property="og:title" content="Siamese Agency Mole East Clicker">
+    <meta property="og:description" content="Click Siameses pussy ass.">
+    <meta property="og:image" content="IMG_3017.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         :root { --bg: #ffffff; --text: #000000; --accent: #007AFF; --secondary: #f0f0f0; }
@@ -133,11 +139,9 @@
         
         if (game.page === 0) {
             const cost = 50n * (12n ** BigInt(game.agencyIdx));
-            // Fixed Names: Now dynamically scale
             createCard(`Agency Upgrade ${game.agencyIdx + 1}`, agencyImgs[game.agencyIdx % agencyImgs.length], cost, () => { game.points -= cost; game.clickPower += (cost / 10n) + 3n; game.agencyIdx++; render(); });
         } else {
             const cost = 1000n * (15n ** BigInt(game.jarvisIdx));
-            // Fixed Image: Uses 'togif.gif' instead of the flappy bird pipe
             createCard(`Jarvis Bot Mk ${game.jarvisIdx + 1}`, "togif.gif", cost, () => { game.points -= cost; game.pps += (cost / 8n) + 10n; game.jarvisIdx++; render(); });
         }
 
@@ -182,11 +186,9 @@
 
     function rebirth() { if(game.points >= 10n**100n) { game.points=0n; game.clickPower=1n; game.pps=0n; game.agencyIdx=0; game.jarvisIdx=0; game.rebirths++; render(); } }
 
-    // --- HIGH VISIBILITY SWIRLS ---
     const bgCanvas = document.getElementById('bg-canvas');
     const bgCtx = bgCanvas.getContext('2d');
     let bgBlobs = [];
-    // Added vibrant colors so it isn't just gray
     const colors = ['#8A2BE2', '#4169E1', '#FF69B4', '#00BFFF', '#9370DB'];
     
     function initBg() {
@@ -202,7 +204,7 @@
     }
     function drawBg() {
         bgCtx.fillStyle = '#fff'; bgCtx.fillRect(0,0,bgCanvas.width,bgCanvas.height);
-        bgCtx.filter = 'blur(50px)'; // Reduced blur so the colors pop
+        bgCtx.filter = 'blur(50px)';
         bgBlobs.forEach(b => {
             bgCtx.fillStyle = b.c; 
             bgCtx.beginPath(); bgCtx.arc(b.x, b.y, b.r, 0, Math.PI*2); bgCtx.fill();
@@ -214,12 +216,11 @@
     }
     window.addEventListener('resize', initBg); initBg(); drawBg();
 
-    // --- FLAPPY SIAMESE (MUCH SLOWER) ---
     const fc = document.getElementById('flappy-canvas');
     const fctx = fc.getContext('2d');
     let fScore = 0, birdY = 250, birdV = 0, pipes = [], fActive = false, fAnim;
     const bImg = new Image(); bImg.src = 'IMG_3017.jpg';
-    const pImg = new Image(); pImg.src = 'image0_15.gif'; // This is only used for the pipes now
+    const pImg = new Image(); pImg.src = 'image0_15.gif';
 
     function startFlappy() { 
         toggleOverlay('minigame-menu'); 
@@ -236,7 +237,6 @@
         render(); 
     }
 
-    // Weakened jump power for better control
     window.addEventListener('keydown', (e) => { if(e.code === 'Space' && fActive) { birdV = -4.5; e.preventDefault(); } });
     fc.onmousedown = (e) => { if(fActive) { birdV = -4.5; e.preventDefault(); } };
 
@@ -244,7 +244,7 @@
         if(!fActive) return;
         fctx.fillStyle = '#4ec0ca'; fctx.fillRect(0,0,400,500);
         
-        birdV += 0.2; // Halved gravity
+        birdV += 0.2; 
         birdY += birdV;
         fctx.drawImage(bImg, 50, birdY, 40, 40);
 
@@ -253,7 +253,7 @@
         }
 
         pipes.forEach((p, i) => {
-            p.x -= 1.5; // Halved pipe speed
+            p.x -= 1.5; 
             
             fctx.drawImage(pImg, p.x, 0, 60, p.h); 
             fctx.drawImage(pImg, p.x, p.h + 140, 60, 500); 
